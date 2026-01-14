@@ -4,117 +4,186 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SpeedReader Pro — AI OCR Study Assistant</title>
-  <meta name="description" content="Upload handwritten or printed notes (images or PDFs). Extract text with Tesseract.js, edit, and generate audio lessons with background music." />
+  <meta name="description" content="Upload handwritten or printed notes (images or PDFs). Extract text with Tesseract.js, edit, and generate audio lessons." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%234361ee'/><text x='50' y='58' text-anchor='middle' font-size='42' fill='white' font-family='Arial'>SR</text></svg>">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Roboto+Slab:wght@300;400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <!-- PDF.js & Tesseract are loaded as modules/deferred below for performance -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <meta name="theme-color" content="#4361ee" />
+
   <style>
     :root{
-      --primary:#4361ee; --primary-600:#3a56d4; --accent:#f72585;
-      --muted:#6c757d; --bg:#f5f7fa; --card:#ffffff; --radius:14px;
-      --glass: rgba(255,255,255,0.7);
-      --shadow: 0 10px 30px rgba(0,0,0,0.08);
-      --success:#4cc9f0;
+      --bg-1: linear-gradient(135deg,#eaf2ff 0%, #eef7ff 50%);
+      --glass-bg: rgba(255,255,255,0.35);
+      --glass-strong: rgba(255,255,255,0.55);
+      --accent: #f72585;
+      --primary:#4361ee;
+      --muted:#6c757d;
+      --card-radius:18px;
+      --shadow: 0 8px 40px rgba(23,30,60,0.08);
+      --glass-border: rgba(255,255,255,0.5);
+      --glass-blur: 8px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-      color:#1f2937; background: linear-gradient(135deg,var(--bg) 0%, #dfe9f3 100%); -webkit-font-smoothing:antialiased;
+      margin:0;
+      font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      color:#0f1724;
+      background: var(--bg-1);
+      -webkit-font-smoothing:antialiased;
       -moz-osx-font-smoothing:grayscale;
+      padding:28px;
     }
-    .container{max-width:1200px;margin:0 auto;padding:24px}
-    header{
-      background:linear-gradient(90deg,var(--primary),#7209b7); color:#fff; padding:20px;border-radius:12px;box-shadow:var(--shadow);
+
+    .app {
+      max-width:1200px;
+      margin:0 auto;
     }
-    .header-row{display:flex;align-items:center;gap:18px;justify-content:space-between}
-    .brand{display:flex;gap:12px;align-items:center}
-    .brand .logo{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#7209b7);display:grid;place-items:center;color:white;font-weight:700;font-size:20px}
-    h1{font-size:20px;margin:0}
-    header p{margin:0;opacity:.9;font-size:13px}
-    nav ul{display:flex;gap:12px;list-style:none;padding:0;margin:0}
-    nav a{color:white;text-decoration:none;padding:8px 12px;border-radius:999px;font-weight:600;opacity:.95}
-    nav a:focus{outline:3px solid rgba(255,255,255,.12)}
 
-    /* layout */
-    main{display:grid;grid-template-columns:1fr 420px;gap:20px;margin-top:22px}
-    @media(max-width:980px){main{grid-template-columns:1fr}}
-    section.card{background:var(--card);padding:18px;border-radius:var(--radius);box-shadow:var(--shadow)}
-
-    /* upload area */
-    .upload-area{
-      border:2px dashed rgba(67,97,238,0.15); border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:all .2s;
-      background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
+    header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:18px;
+      border-radius:22px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+      backdrop-filter: blur(var(--glass-blur));
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.35);
     }
-    .upload-area.dragover{border-color:var(--primary);transform:translateY(-4px)}
-    .upload-area i{font-size:40px;color:var(--primary);margin-bottom:10px}
-    .small{font-size:13px;color:var(--muted)}
+    .brand {display:flex;align-items:center;gap:14px}
+    .logo {
+      width:64px;height:64px;border-radius:14px;
+      background: linear-gradient(135deg,var(--primary),#7209b7);
+      color:white;display:grid;place-items:center;font-weight:700;font-size:20px;box-shadow:0 6px 18px rgba(67,97,238,0.15);
+    }
+    header h1 {font-size:18px;margin:0}
+    header p {margin:0;font-size:13px;color:var(--muted)}
 
-    .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px}
-    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:0;background:var(--primary);color:#fff;font-weight:600;cursor:pointer}
-    .btn.secondary{background:transparent;color:var(--primary);border:2px solid rgba(67,97,238,0.12)}
-    .btn.ghost{background:transparent;color:var(--muted);border:1px dashed rgba(0,0,0,0.06)}
+    nav a {margin-left:12px;color:rgba(15,23,36,0.85);text-decoration:none;font-weight:600;padding:8px 12px;border-radius:12px}
+    nav a:hover {background:rgba(67,97,238,0.08);color:var(--primary)}
 
-    /* preview + extracted text */
-    .preview{display:flex;gap:16px;flex-wrap:wrap}
-    .preview img{max-width:100%;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,0.06)}
-    .extracted{flex:1;min-width:260px}
-    .extracted .toolbar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
-    .extracted textarea{width:100%;min-height:220px;padding:12px;border-radius:10px;border:1px solid #eaeaea;font-family:'Roboto Slab',serif;line-height:1.6;resize:vertical}
-    .stats{display:flex;gap:12px;color:var(--muted);font-size:13px;margin-top:8px;align-items:center;flex-wrap:wrap}
+    main {
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:22px;
+      margin-top:20px;
+    }
+    @media (max-width:980px) {
+      main {grid-template-columns: 1fr}
+    }
 
-    /* player */
-    .player {background:linear-gradient(180deg,#141625,#1a1a2e);color:#fff;padding:14px;border-radius:12px}
-    .player .controls{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px}
-    .circle{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.04);cursor:pointer}
-    .slider{width:100%}
-    .setting{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0;color:#ddd}
+    /* Glass card */
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.25));
+      border-radius: var(--card-radius);
+      padding:18px;
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(var(--glass-blur));
+      box-shadow: var(--shadow);
+    }
 
-    footer{margin-top:24px;text-align:center;color:var(--muted);font-size:13px}
+    .upload-area {
+      border-radius:12px;
+      padding:18px;
+      text-align:center;
+      cursor:pointer;
+      transition: transform .18s ease, box-shadow .18s ease;
+      border:1px dashed rgba(15,23,36,0.06);
+      background: linear-gradient(180deg, rgba(255,255,255,0.35), rgba(255,255,255,0.15));
+    }
+    .upload-area:focus, .upload-area:hover { transform: translateY(-6px); box-shadow: 0 14px 40px rgba(10,20,40,0.06) }
 
-    /* accessibility helpers */
+    .upload-area.dragover {
+      border-color: rgba(67,97,238,0.35);
+      box-shadow: 0 20px 50px rgba(67,97,238,0.06);
+    }
+
+    .upload-area i {font-size:44px;color:var(--primary);margin-bottom:10px}
+    .small {font-size:13px;color:var(--muted)}
+
+    .actions {display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+    .btn {
+      display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:0;background:linear-gradient(90deg,var(--primary),#7209b7);
+      color:#fff;font-weight:700;cursor:pointer;box-shadow: 0 8px 30px rgba(67,97,238,0.12);
+    }
+    .btn.secondary {
+      background:transparent;color:var(--primary);border:1px solid rgba(67,97,238,0.12);box-shadow:none;font-weight:600;
+    }
+    .btn.ghost {background:transparent;color:var(--muted);border:1px dashed rgba(0,0,0,0.06);}
+
+    /* layout for preview & extracted */
+    .preview {
+      display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;
+    }
+    .preview .left {flex:1;min-width:280px}
+    .preview .right {flex:1;min-width:320px}
+
+    .preview img {
+      width:100%;height:auto;border-radius:12px;display:block;object-fit:contain;box-shadow: 0 12px 30px rgba(10,20,40,0.06);
+      border:1px solid rgba(255,255,255,0.5);
+      background:linear-gradient(180deg,#fafcff,#f7fbff);
+    }
+
+    .extracted textarea {
+      width:100%;min-height:220px;padding:14px;border-radius:12px;border:1px solid rgba(10,20,40,0.04);
+      font-family:'Roboto Slab',serif;font-size:15px;line-height:1.7;background: rgba(255,255,255,0.6);
+      resize:vertical;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+    }
+
+    .toolbar {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+    .stats {display:flex;gap:12px;color:var(--muted);font-size:13px;margin-top:8px;flex-wrap:wrap}
+
+    /* Player card */
+    .player {
+      color:#fff;
+      background: linear-gradient(180deg, rgba(13,18,33,0.9), rgba(13,18,33,0.85));
+      border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,0.03);
+    }
+    .player .setting {display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0;color:#ddd}
+    .circle {width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.04);cursor:pointer}
+    .controls {display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px}
+
+    footer {margin-top:20px;text-align:center;color:var(--muted);font-size:13px}
+
     .visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap}
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="app">
     <header role="banner" aria-label="SpeedReader Pro header">
-      <div class="header-row">
-        <div class="brand">
-          <div class="logo" aria-hidden="true">SR</div>
-          <div>
-            <h1>SpeedReader <strong style="color:var(--accent)">Pro</strong></h1>
-            <p class="small">Accurate OCR → Edit → Audio Lessons • Offline-first client processing</p>
-          </div>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">SR</div>
+        <div>
+          <h1>SpeedReader <strong style="color:var(--accent)">Pro</strong></h1>
+          <p class="small">Privacy-first OCR & local TTS — convert notes to audio lessons</p>
         </div>
-        <nav role="navigation" aria-label="Primary">
-          <ul>
-            <li><a href="#upload">Upload</a></li>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#contact">Contact</a></li>
-          </ul>
-        </nav>
       </div>
+
+      <nav role="navigation" aria-label="Primary">
+        <a href="#upload">Upload</a>
+        <a href="#features">Features</a>
+        <a href="#contact">Contact</a>
+      </nav>
     </header>
 
     <main>
       <!-- Left: Upload & Results -->
       <section class="card" id="upload" aria-labelledby="uploadTitle">
         <h2 id="uploadTitle">Upload notes (image or PDF)</h2>
-        <p class="small" id="uploadHelp">Drag & drop files here, click to select, or paste an image. We run OCR locally with Tesseract.js and extract text from PDFs using PDF.js.</p>
+        <p class="small" id="uploadHelp">Drag & drop, click to choose, or paste an image. OCR runs locally using Tesseract.js; multi-page PDFs are parsed with PDF.js.</p>
 
         <div id="uploadArea" class="upload-area" tabindex="0" role="button" aria-describedby="uploadHelp">
           <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
           <div style="font-weight:700">Drop image / PDF here</div>
           <div class="small">PNG, JPG, JPEG, PDF (multi-page), handwritten or printed text</div>
           <input id="fileInput" class="visually-hidden" type="file" accept="image/*,.pdf" />
-          <div class="actions" style="justify-content:center;margin-top:12px">
+          <div class="actions">
             <button class="btn" id="chooseBtn"><i class="fas fa-folder-open"></i> Choose file</button>
             <button class="btn secondary" id="pasteBtn" title="Paste image from clipboard (Ctrl+V)"><i class="fas fa-clipboard"></i> Paste</button>
-            <button class="btn ghost" id="clearBtn" title="Clear current results"><i class="fas fa-trash-alt"></i> Clear</button>
+            <button class="btn ghost" id="clearBtn" title="Clear results"><i class="fas fa-trash-alt"></i> Clear</button>
           </div>
         </div>
 
@@ -132,24 +201,24 @@
           <div class="small" id="statusLabel" aria-live="polite">Idle</div>
         </div>
 
-        <!-- Progress -->
         <div id="progressWrap" style="margin-top:12px;display:none">
-          <div style="background:#eef2ff;border-radius:10px;overflow:hidden;height:10px"><div id="progressBar" style="height:100%;width:0%;background:var(--primary);transition:width .25s"></div></div>
+          <div style="background:rgba(10,20,40,0.03);border-radius:10px;overflow:hidden;height:10px">
+            <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--primary),#7209b7);transition:width .25s"></div>
+          </div>
           <div class="small" style="margin-top:6px"><span id="progressText">0%</span></div>
         </div>
 
-        <!-- Preview & text -->
         <div style="margin-top:18px" id="resultArea" hidden>
           <div class="preview">
-            <div style="min-width:300px;flex:1">
+            <div class="left">
               <h3 class="small">Preview</h3>
-              <div id="previewContainer" style="border-radius:10px;overflow:hidden;background:#fafafa;padding:8px">
-                <img id="previewImage" alt="Uploaded preview" style="width:100%;display:block;max-height:480px;object-fit:contain" />
+              <div id="previewContainer" style="border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#fbfdff,#f6fbff);padding:8px">
+                <img id="previewImage" alt="Uploaded preview" style="width:100%;display:block;max-height:520px;object-fit:contain" />
                 <div id="pdfPageCount" class="small" style="margin-top:8px;display:none">Pages: <span id="pagesCount">1</span></div>
               </div>
             </div>
 
-            <div class="extracted">
+            <div class="right">
               <div class="toolbar">
                 <div>
                   <h3 class="small">Extracted text</h3>
@@ -203,6 +272,7 @@
             <div class="setting"><label class="small">Music volume <span id="musicVal">30%</span></label>
               <input id="musicVolume" class="slider" type="range" min="0" max="100" step="1" value="30">
             </div>
+
             <div class="setting" style="margin-top:10px">
               <div style="font-size:13px;color:#ddd">Playback</div>
               <div class="controls">
@@ -211,6 +281,7 @@
                 <button class="circle" id="forward"><i class="fas fa-forward"></i></button>
               </div>
             </div>
+
             <div style="margin-top:12px;color:#cbd5e1;font-size:13px" id="playerStatus">Ready</div>
           </div>
         </section>
@@ -219,37 +290,23 @@
           <h2 id="features" style="font-size:16px;margin:0">Why this works</h2>
           <ul class="small" style="margin-top:8px;line-height:1.6">
             <li>Runs OCR in the browser for privacy & low latency (Tesseract.js).</li>
-            <li>PDF multi-page extraction with PDF.js — no server required.</li>
+            <li>PDF multi-page extraction with PDF.js — robust fallback if CDN import fails.</li>
             <li>Editable extracted text, copy/download, and client-side audio via Web Speech.</li>
-            <li>Accessible, responsive UI with keyboard shortcuts (Ctrl/Cmd+V to paste).</li>
+            <li>Glassmorphism UI with accessible controls and keyboard shortcuts (Ctrl/Cmd+V to paste).</li>
           </ul>
         </section>
       </aside>
     </main>
 
-    <footer>
-      <div class="small">Made with <span style="color:var(--accent)">♥</span> • SpeedReader Pro — Local OCR & Audio • <a href="https://github.com/Boluwatife06-bit/speedReader" target="_blank" rel="noopener">GitHub</a></div>
+    <footer id="contact" class="small">
+      Made with <span style="color:var(--accent)">♥</span> • SpeedReader Pro — Local OCR & Audio • <a href="https://github.com/Boluwatife06-bit/speedReader" target="_blank" rel="noopener">GitHub</a>
     </footer>
   </div>
 
-  <!-- Load scripts deferred. Uses module for modern code; gracefully degrade if unsupported. -->
-  <script>
-  (function(){
-    // Feature detection: if modules not supported, show fallback.
-    if (!('noModule' in HTMLScriptElement.prototype) && !('content' in document.createElement('template'))) {
-      // very old browser - don't run advanced features
-      console.warn('Old browser detected. Some features may not work.');
-    }
-  })();
-  </script>
-
   <script type="module">
-  // Main module: handles upload, OCR (Tesseract), PDF parsing (pdf.js), and Web Speech API audio playback.
-  importScripts();
-
-  // Utilities
-  const $ = sel => document.querySelector(sel);
-  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  // ========= Utilities & DOM helpers =========
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
 
   // Elements
   const uploadArea = $('#uploadArea');
@@ -265,7 +322,6 @@
   const previewImage = $('#previewImage');
   const pagesCountEl = $('#pagesCount');
   const pdfPageCount = $('#pdfPageCount');
-  const previewContainer = $('#previewContainer');
   const extractedTextEl = $('#extractedText');
   const wordCountEl = $('#wordCount');
   const charCountEl = $('#charCount');
@@ -288,7 +344,7 @@
   const voiceSelect = $('#voiceSelect');
   const playerStatus = $('#playerStatus');
 
-  // Global state
+  // State
   let currentBlob = null;
   let currentPages = 1;
   let tesseractWorker = null;
@@ -300,38 +356,95 @@
   let bgGain = null;
   let voices = [];
 
-  // Lazy load heavy libs when needed
+  // Helper: load external script if dynamic import fails
+  function loadScript(src) {
+    return new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.onload = () => res();
+      s.onerror = (e) => rej(new Error('Failed to load ' + src));
+      document.head.appendChild(s);
+    });
+  }
+
+  // ===== Tesseract loader with fallback =====
   async function loadTesseract() {
     if (tesseractWorker) return tesseractWorker;
     status('Loading OCR engine...');
-    const { createWorker } = await import('https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js');
-    tesseractWorker = createWorker({
-      logger: m => {
-        // progress messages: m.progress for OCR
-        if (m.status && m.progress != null) {
-          updateProgress(m.progress * 100, m.status);
-        } else if (m.status) {
-          status(m.status);
+    try {
+      // try dynamic import (works in modern browsers with ESM CDN builds)
+      const mod = await import('https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js');
+      const workerFactory = mod?.createWorker ? mod.createWorker : (mod?.default?.createWorker ? mod.default.createWorker : null);
+      if (!workerFactory) throw new Error('Tesseract module did not export createWorker');
+      tesseractWorker = workerFactory({
+        logger: m => {
+          if (m.status && m.progress != null) {
+            updateProgress(m.progress, m.status);
+          } else if (m.status) {
+            status(m.status);
+          }
         }
-      }
-    });
+      });
+    } catch (err) {
+      // fallback to script tag (global Tesseract)
+      console.warn('Dynamic import of Tesseract failed, falling back to script tag', err);
+      await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js');
+      const globalT = window.Tesseract || window.tesseract;
+      if (!globalT || !globalT.createWorker) throw new Error('Tesseract not available after script load');
+      tesseractWorker = globalT.createWorker({
+        logger: m => {
+          if (m.status && m.progress != null) {
+            updateProgress(m.progress, m.status);
+          } else if (m.status) {
+            status(m.status);
+          }
+        }
+      });
+    }
+
     await tesseractWorker.load();
-    await tesseractWorker.loadLanguage(ocrLang.value || 'eng');
-    await tesseractWorker.initialize(ocrLang.value || 'eng');
+    const lang = ocrLang.value || 'eng';
+    await tesseractWorker.loadLanguage(lang);
+    await tesseractWorker.initialize(lang);
     return tesseractWorker;
   }
 
+  // ===== PDF.js loader robust version =====
   async function loadPDFJS() {
     if (pdfjsLib) return pdfjsLib;
     status('Loading PDF parser...');
-    // import script dynamically
-    const pdf = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js');
-    // pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-    pdfjsLib = pdf;
-    return pdfjsLib;
+    try {
+      // Try dynamic import first
+      const mod = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js');
+      // some CDN builds export default, others export directly
+      pdfjsLib = mod?.default || mod;
+      // ensure workerSrc set (uses CDN worker)
+      if (pdfjsLib?.GlobalWorkerOptions) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+      }
+      // verify getDocument exists
+      if (typeof pdfjsLib.getDocument !== 'function') {
+        // fallback to global script
+        throw new Error('pdf.getDocument not found on imported module');
+      }
+      return pdfjsLib;
+    } catch (err) {
+      // fallback: inject script tag and read global pdfjsLib
+      console.warn('Dynamic import of PDF.js failed, falling back to script tag', err);
+      // load both min and worker; pdf.min.js will reference workerSrc below
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js');
+      pdfjsLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'] || null;
+      if (!pdfjsLib) throw new Error('PDF.js not available after loading script');
+      if (pdfjsLib?.GlobalWorkerOptions) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+      }
+      if (typeof pdfjsLib.getDocument !== 'function') throw new Error('pdf.getDocument is not a function after fallback');
+      return pdfjsLib;
+    }
   }
 
-  // UI helpers
+  // ===== UI helpers =====
   function status(text){
     statusLabel.textContent = text;
     playerStatus.textContent = text;
@@ -351,7 +464,7 @@
     progressText.textContent = '0%';
   }
 
-  // File handling
+  // ===== File handling & events =====
   function resetResults(){
     resultArea.hidden = true;
     previewImage.src = '';
@@ -362,36 +475,25 @@
     status('Idle');
     hideProgress();
   }
-
   clearBtn.addEventListener('click', resetResults);
-  chooseBtn.addEventListener('click', ()=>fileInput.click());
+  chooseBtn.addEventListener('click', ()=> fileInput.click());
   fileInput.addEventListener('change', e => {
     const f = e.target.files && e.target.files[0];
     if (f) handleFile(f);
   });
 
-  // Drag & drop support
   ['dragenter','dragover'].forEach(ev => {
-    uploadArea.addEventListener(ev, e => {
-      e.preventDefault(); e.stopPropagation();
-      uploadArea.classList.add('dragover');
-    });
+    uploadArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); uploadArea.classList.add('dragover'); });
   });
   ['dragleave','drop'].forEach(ev => {
-    uploadArea.addEventListener(ev, e => {
-      e.preventDefault(); e.stopPropagation();
-      uploadArea.classList.remove('dragover');
-    });
+    uploadArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); uploadArea.classList.remove('dragover'); });
   });
   uploadArea.addEventListener('drop', e => {
     const f = e.dataTransfer.files && e.dataTransfer.files[0];
     if (f) handleFile(f);
   });
 
-  // Paste support
-  pasteBtn.addEventListener('click', ()=> {
-    status('Focus the page and press Ctrl/Cmd+V to paste an image');
-  });
+  pasteBtn.addEventListener('click', ()=> status('Focus the page and press Ctrl/Cmd+V to paste an image'));
   document.addEventListener('paste', async (ev) => {
     const items = ev.clipboardData && ev.clipboardData.items;
     if (!items) return;
@@ -406,13 +508,12 @@
     }
   });
 
-  // Handle file (image/pdf)
   async function handleFile(file) {
     resetResults();
     currentBlob = file;
     resultArea.hidden = false;
     status('Preparing file...');
-    showProgress(2, 'Preparing');
+    showProgress(3, 'Preparing');
 
     const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     try {
@@ -434,11 +535,11 @@
   async function handleImage(file) {
     const url = URL.createObjectURL(file);
     previewImage.src = url;
-    previewImage.alt = file.name;
+    previewImage.alt = file.name || 'Image preview';
     pdfPageCount.style.display = 'none';
     showProgress(5, 'Rendering preview');
-    await new Promise(r => previewImage.decode().then(r).catch(r));
-    // Run OCR on image
+    try { await previewImage.decode(); } catch(e){}
+    // run OCR
     await runOCROnImage(file);
   }
 
@@ -450,7 +551,7 @@
     currentPages = doc.numPages || 1;
     pagesCountEl.textContent = currentPages;
     pdfPageCount.style.display = 'block';
-    // Render first page as preview
+    // render first page as preview
     const page = await doc.getPage(1);
     const viewport = page.getViewport({scale:1.5});
     const canvas = document.createElement('canvas');
@@ -459,20 +560,21 @@
     const ctx = canvas.getContext('2d');
     await page.render({canvasContext:ctx,viewport}).promise;
     previewImage.src = canvas.toDataURL('image/png');
-    // OCR pages sequentially and concatenate text (could be expensive for many pages)
+
+    // OCR pages sequentially (note: multi-page PDFs can be slow in-browser)
     let fullText = '';
     for (let i=1;i<=currentPages;i++){
       status(`OCR page ${i}/${currentPages}`);
       showProgress((i-1)/currentPages*100, `Page ${i}/${currentPages}`);
       const p = await doc.getPage(i);
-      const vp = p.getViewport({scale:2});
+      const vp = p.getViewport({scale:2.0});
       const c = document.createElement('canvas');
       c.width = vp.width;
       c.height = vp.height;
       await p.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
       const blob = await new Promise(res => c.toBlob(res,'image/png'));
-      const text = await runOCROnImage(blob, /*silent*/ true);
-      fullText += '\n\n' + text;
+      const text = await runOCROnImage(blob, true);
+      fullText += (fullText ? '\n\n' : '') + text;
     }
     extractedTextEl.value = fullText.trim();
     postProcessExtractedText();
@@ -480,43 +582,38 @@
     status('Done');
   }
 
-  // OCR
+  // ===== OCR =====
   async function runOCROnImage(blobOrFile, silent=false){
     const worker = await loadTesseract();
     const lang = ocrLang.value || 'eng';
-    // change language if needed
-    try{
-      // if lang differs, reinit
-      // (tesseract's initialize with new lang may be heavy - keep simple)
+    try {
       status('Running OCR...');
       showProgress(6, 'Starting OCR');
-      // feed blob directly
-      const { data: { text } } = await worker.recognize(blobOrFile, {lang});
+      // If language changed, ensure initialized (best-effort)
+      // Recognize accepts File/Blob/URL/Canvas
+      const result = await worker.recognize(blobOrFile, {lang});
+      const text = result?.data?.text ?? '';
       if (!silent) extractedTextEl.value = text.trim();
-      // update stats
       postProcessExtractedText();
       hideProgress();
       status('OCR complete');
       return text.trim();
-    }catch(err){
-      console.error(err);
+    } catch (err) {
+      console.error('OCR error', err);
       throw err;
     }
   }
 
-  // Text helpers
   function postProcessExtractedText(){
     const txt = extractedTextEl.value || '';
     const words = txt.trim().length === 0 ? 0 : txt.trim().split(/\s+/).length;
     const chars = txt.length;
     wordCountEl.textContent = `Words: ${words}`;
     charCountEl.textContent = `Chars: ${chars}`;
-    const estSeconds = Math.max(10, Math.round(words / 160 * 60)); // 160 wpm baseline
+    const estSeconds = Math.max(10, Math.round(words / 160 * 60));
     readTimeEl.textContent = `Est. listen: ${formatTime(estSeconds)}`;
-    // event: show preview area if not already
     resultArea.hidden = false;
   }
-
   function formatTime(seconds){
     const m = Math.floor(seconds/60), s = seconds%60;
     return `${m}:${s.toString().padStart(2,'0')}`;
@@ -541,18 +638,24 @@
     URL.revokeObjectURL(a.href);
   });
 
-  // OCR language change: reinit worker to selected language
+  // re-init OCR language on change (best-effort)
   ocrLang.addEventListener('change', async ()=>{
     if (!tesseractWorker) return;
     status('Switching OCR language...');
     showProgress(3,'Loading language');
-    await tesseractWorker.loadLanguage(ocrLang.value);
-    await tesseractWorker.initialize(ocrLang.value);
-    hideProgress();
-    status('Language loaded');
+    try {
+      await tesseractWorker.loadLanguage(ocrLang.value);
+      await tesseractWorker.initialize(ocrLang.value);
+      status('Language loaded');
+    } catch (e) {
+      console.warn('Language change failed', e);
+      status('Language load failed');
+    } finally {
+      hideProgress();
+    }
   });
 
-  // Web Speech (TTS) playback & background music mixing
+  // ===== Web Speech (TTS) & background music =====
   function populateVoices(){
     voices = synth.getVoices();
     voiceSelect.innerHTML = '';
@@ -589,15 +692,43 @@
   }
   stopAudioBtn.addEventListener('click', stopSpeech);
 
-  // Play synthesized text
+  async function prepareBackgroundMusic(key, vol=0.3){
+    if (backgroundAudio) {
+      backgroundAudio.pause();
+      backgroundAudio = null;
+    }
+    if (bgAudioCtx) {
+      try { await bgAudioCtx.close(); } catch(e){}
+      bgAudioCtx = null; bgGain = null;
+    }
+    if (key === 'none') return;
+    // NOTE: Replace these demo URLs with assets you host to avoid CORS/autoplay issues
+    const sources = {
+      'lofi': 'https://cdn.jsdelivr.net/gh/anshuman-bose/public-audio/lofi-loop.mp3',
+      'ambient': 'https://cdn.jsdelivr.net/gh/anshuman-bose/public-audio/ambient-loop.mp3',
+      'nature': 'https://cdn.jsdelivr.net/gh/anshuman-bose/public-audio/nature-loop.mp3'
+    };
+    const src = sources[key];
+    if (!src) return;
+    backgroundAudio = new Audio(src);
+    backgroundAudio.crossOrigin = "anonymous";
+    backgroundAudio.loop = true;
+    bgAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const track = bgAudioCtx.createMediaElementSource(backgroundAudio);
+    bgGain = bgAudioCtx.createGain();
+    bgGain.gain.value = vol;
+    track.connect(bgGain).connect(bgAudioCtx.destination);
+    try {
+      await backgroundAudio.play();
+    } catch(err){
+      console.warn('Autoplay blocked', err);
+    }
+  }
+
   function playText(text){
     if (!text || text.trim().length === 0) return alert('No text to read. Please run OCR or paste text.');
-    // stop any existing
     stopSpeech();
-
-    // prepare background music (simple audio element playing an embedded data or remote file)
     prepareBackgroundMusic(bgMusic.value, Number(musicVolume.value)/100).then(() => {
-      // speak with Web Speech
       const utter = new SpeechSynthesisUtterance(text);
       const selected = voiceSelect.value;
       const voiceObj = voices.find(v=>v.name===selected) || voices.find(v => v.default) || null;
@@ -616,55 +747,12 @@
           backgroundAudio.currentTime = 0;
         }
       };
-      utter.onerror = (e) => {
-        console.error('TTS error', e);
-        playerStatus.textContent = 'Audio error';
-      };
+      utter.onerror = (e) => { console.error('TTS error', e); playerStatus.textContent = 'Audio error'; };
       speakingUtterance = utter;
       synth.speak(utter);
     });
   }
 
-  // Prepare background music - simple mapping to royalty-free short embedded sounds (CDN or data)
-  async function prepareBackgroundMusic(key, vol=0.3){
-    // Stop any current
-    if (backgroundAudio) {
-      backgroundAudio.pause();
-      backgroundAudio = null;
-    }
-    if (bgAudioCtx) {
-      try { bgAudioCtx.close(); } catch(e){}
-      bgAudioCtx = null; bgGain = null;
-    }
-    if (key === 'none') return Promise.resolve();
-    // For demo, use short looped audio from public domain (replace with your assets)
-    const sources = {
-      'lofi': 'https://cdn.jsdelivr.net/gh/anshuman-bose/public-audio/lofi-loop.mp3',
-      'ambient': 'https://cdn.jsdelivr.net/gh/anshuman-bose/public-audio/ambient-loop.mp3',
-      'nature': 'https://cdn.jsdelivr.net/gh/anshuman-bose/public-audio/nature-loop.mp3'
-    };
-    const src = sources[key];
-    if (!src) return;
-    // Use HTMLAudioElement for simplicity
-    backgroundAudio = new Audio(src);
-    backgroundAudio.crossOrigin = "anonymous";
-    backgroundAudio.loop = true;
-    // Use WebAudio to control volume smoothly
-    bgAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const track = bgAudioCtx.createMediaElementSource(backgroundAudio);
-    bgGain = bgAudioCtx.createGain();
-    bgGain.gain.value = vol;
-    track.connect(bgGain).connect(bgAudioCtx.destination);
-    try {
-      await backgroundAudio.play();
-    } catch(err){
-      // Autoplay policies may block play; user interaction required
-      console.warn('Autoplay blocked:',err);
-    }
-    return;
-  }
-
-  // play/pause button toggles speak and music
   playPauseBtn.addEventListener('click', ()=>{
     if (synth.speaking) {
       synth.pause();
@@ -677,14 +765,11 @@
       if (backgroundAudio) backgroundAudio.play();
       playerStatus.textContent = 'Resumed';
     } else {
-      // start playing current text
       playText(extractedTextEl.value);
     }
   });
 
-  // small navigation buttons for skipping (not precise with TTS - just pause/resume)
   $('#rewind').addEventListener('click', ()=> {
-    // Not implemented: complex with TTS; just restart
     stopSpeech();
     playText(extractedTextEl.value);
   });
@@ -692,74 +777,39 @@
     stopSpeech(); playerStatus.textContent = 'Skipped to end';
   });
 
-  // Generate audio button (plays)
   generateAudioBtn.addEventListener('click', ()=> playText(extractedTextEl.value));
 
-  // Save audio: experimental approach using MediaRecorder over WebAudio - not fully reliable cross-browser for SpeechSynthesis output
   saveAudioBtn.addEventListener('click', async ()=>{
-    alert('Audio export is experimental. The browser must allow recording of TTS output. If this fails, consider using a server-side TTS for downloads.');
-    try {
-      // Create an offline recording by routing speechSynthesis into an AudioContext is not straightforward.
-      // For expediency, if background music is selected, we download only the music loop; otherwise offer a fallback to generate text file.
-      if (bgMusic.value !== 'none' && backgroundAudio) {
-        // download music file (proxy or direct)
-        const src = backgroundAudio.src;
-        const a = document.createElement('a');
-        a.href = src;
-        a.download = `${bgMusic.value}.mp3`;
-        a.click();
-        return;
-      }
-      // Fallback: export text as narrated script
-      const blob = new Blob([extractedTextEl.value || ''], {type:'text/plain;charset=utf-8'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'speedreader_script.txt';
-      a.click();
-    } catch(e){
-      console.error(e);
-      alert('Export failed: ' + e.message);
-    }
+    alert('Audio export is experimental. Browser limitations may block direct export of SpeechSynthesis output. Consider server-side TTS for reliable downloads.');
   });
 
   // Keyboard shortcuts
   document.addEventListener('keydown', (e)=>{
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-      // user paste - handled by paste event
-    }
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       extractedTextEl.focus();
     }
   });
 
-  // Update stats when text changes
   extractedTextEl.addEventListener('input', postProcessExtractedText);
 
-  // Initialize small demo state, and set accessible defaults
+  // Init
   (function init(){
     resetResults();
-    // focus management
-    uploadArea.addEventListener('keydown', (e)=>{
-      if (e.key === 'Enter' || e.key === ' ') fileInput.click();
-    });
-    // Ensure voices are loaded
+    uploadArea.addEventListener('keydown', (e)=> { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
     setTimeout(populateVoices, 500);
     status('Ready — upload a file to begin');
   })();
 
-  // Helper to dynamically import unused libs safely (no-op placeholder for bundlers)
-  function importScripts(){
-    // placeholder to satisfy earlier call; real imports happen in functions loadTesseract & loadPDFJS
-  }
-
-  // Graceful unload: terminate worker
+  // Graceful cleanup
   window.addEventListener('beforeunload', async ()=>{
     if (tesseractWorker && tesseractWorker.terminate) {
       try { await tesseractWorker.terminate(); } catch(e){}
     }
+    if (bgAudioCtx) {
+      try { await bgAudioCtx.close(); } catch(e){}
+    }
   });
-
   </script>
 </body>
 </html>
